@@ -24,3 +24,9 @@ The whole API, configuration, limits and errors: [`docs/api.md`](docs/api.md).
 like every Orama service (the umbrella `CLAUDE.md` rule). Pin: liquid-bridge `modules/lake-sqlite`.
 The operator side (StatefulSet, Service, credential) is orama-operator
 `internal/controller/lake_service_sqlite.go`.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Third-party components and their licenses are in
+[THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES). Contributions are welcome under the Developer
+Certificate of Origin; see [CONTRIBUTING.md](CONTRIBUTING.md).

@@ -1,7 +1,4 @@
-/*
-Copyright 2026 OramaSearch.
-Licensed under the Apache License, Version 2.0.
-*/
+// SPDX-License-Identifier: MIT
 
 // Package server is lake-sqlite's HTTP API over one SQLite database: POST /v1/query, /v1/exec and
 // /v1/batch behind a bearer token, and an unauthenticated GET /healthz. The contract is lake's
