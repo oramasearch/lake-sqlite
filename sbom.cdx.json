@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:26f8ce37-5c86-5b69-b5b1-225114bd223e",
+  "serialNumber": "urn:uuid:5b37bb8e-0da5-569c-97d4-6009cd39ff4c",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-16T04:29:30Z",
+    "timestamp": "2026-11-16T05:46:24Z",
     "tools": {
       "components": [
         {
@@ -206,7 +206,7 @@
       "bom-ref": "DocumentRoot",
       "type": "library",
       "name": "lake-sqlite",
-      "version": "92b37ddccae2",
+      "version": "309c6d397a17",
       "licenses": [
         {
           "license": {
