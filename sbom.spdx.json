@@ -2,17 +2,17 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "lake-sqlite-3ede56655543",
-  "documentNamespace": "https://github.com/oramasearch/lake-sqlite/sbom/3ede56655543ef314e7b1eea428004542e85a5a4",
+  "name": "lake-sqlite-61745596556c",
+  "documentNamespace": "https://github.com/oramasearch/lake-sqlite/sbom/61745596556ca5d6ec4472b6fc8ec6e170de2280",
   "creationInfo": {
-    "created": "2026-11-15T17:24:18Z",
+    "created": "2026-11-16T01:55:26Z",
     "creators": [
       "Organization: OramaSearch, Inc.",
       "Tool: tools/sbom.py",
       "Tool: syft"
     ],
     "licenseListVersion": "3.29",
-    "comment": "Made from source commit 3ede56655543ef314e7b1eea428004542e85a5a4 by tools/sbom.py."
+    "comment": "Made from source commit 61745596556ca5d6ec4472b6fc8ec6e170de2280 by tools/sbom.py."
   },
   "documentDescribes": [
     "SPDXRef-DocumentRoot"
@@ -244,7 +244,7 @@
     {
       "name": "lake-sqlite",
       "SPDXID": "SPDXRef-DocumentRoot",
-      "versionInfo": "3ede56655543",
+      "versionInfo": "61745596556c",
       "downloadLocation": "git+https://github.com/oramasearch/lake-sqlite.git",
       "homepage": "https://github.com/oramasearch/lake-sqlite",
       "filesAnalyzed": false,
