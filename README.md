@@ -3,6 +3,8 @@
 **One SQLite database behind a small HTTP API with a bearer token: the service behind lake's SQLite
 services.**
 
+Latest release: [v0.2.0](docs/releases/v0.2.0.md).
+
 lake-sqlite is one static Go binary that serves one SQLite database file over HTTP. A workspace
 creates a SQLite service in lake; the Orama operator runs one `lake-sqlite` pod for it, on its own
 volume, and lake hands out the service's address and token. The driver is SQLite translated to pure
@@ -74,6 +76,7 @@ from the service's Secret. Clients talk to it over HTTP with that token.
 ## Documentation
 
 - [`docs/api.md`](docs/api.md): the HTTP API, configuration, limits, errors, build and local run.
+- [`docs/releases/`](docs/releases/README.md): release notes.
 - [`docs/README.md`](docs/README.md): the docs index.
 
 ## Community

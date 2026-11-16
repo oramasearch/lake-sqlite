@@ -3,6 +3,8 @@
 // lake-sqlite serves one SQLite database over HTTP for lake's sqlite service kind. The Orama
 // operator runs it as a one-pod StatefulSet per service (docs/lake/lake-sqlite.md).
 //
+// `lake-sqlite --version` prints the version and exits.
+//
 // Environment:
 //
 //	LAKE_SQLITE_TOKEN         the bearer token (required; mounted from the service's Secret)
@@ -26,6 +28,7 @@ import (
 	"time"
 
 	"github.com/oramasearch/lake-sqlite/internal/server"
+	"github.com/oramasearch/lake-sqlite/internal/version"
 )
 
 const (
@@ -38,6 +41,10 @@ const (
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
+		fmt.Println("lake-sqlite", version.Version)
+		return
+	}
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	if err := run(log); err != nil {
 		log.Error("lake-sqlite stopped", "err", err.Error())
@@ -98,7 +105,7 @@ func run(log *slog.Logger) error {
 	}
 	errs := make(chan error, 1)
 	go func() {
-		log.Info("lake-sqlite listening", "addr", addr, "path", path)
+		log.Info("lake-sqlite listening", "version", version.Version, "addr", addr, "path", path)
 		errs <- httpServer.ListenAndServe()
 	}()
 
