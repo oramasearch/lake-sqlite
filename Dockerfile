@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+
 # lake-sqlite: one static binary over one SQLite database, built with modernc.org/sqlite (pure Go,
 # BSD-3-Clause), so CGO stays off and the runtime is distroless/static: no shell, no libc, running as
 # the numeric nonroot user 65532. Base images are digest-pinned.

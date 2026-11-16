@@ -1,7 +1,4 @@
-/*
-Copyright 2026 OramaSearch.
-Licensed under the Apache License, Version 2.0.
-*/
+// SPDX-License-Identifier: MIT
 
 // lake-sqlite serves one SQLite database over HTTP for lake's sqlite service kind. The Orama
 // operator runs it as a one-pod StatefulSet per service (docs/lake/lake-sqlite.md).
