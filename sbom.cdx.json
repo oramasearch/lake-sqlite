@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:502a688c-57d9-54c2-831a-cb25c11b5860",
+  "serialNumber": "urn:uuid:92211442-f02c-5a49-b141-849ba4e52eba",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-11-16T01:55:26Z",
+    "timestamp": "2026-11-16T03:59:01Z",
     "tools": {
       "components": [
         {
@@ -23,19 +23,6 @@
     }
   },
   "components": [
-    {
-      "bom-ref": "pkg:docker/gcr.io/distroless/static@sha256%3Ad29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478?package-id=Image-gcr.io-distroless-static-6801982e8cce4463&tag=nonroot",
-      "type": "library",
-      "name": "gcr.io/distroless/static",
-      "version": "nonroot@sha256:d29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478",
-      "purl": "pkg:docker/gcr.io/distroless/static@sha256%3Ad29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478?tag=nonroot",
-      "properties": [
-        {
-          "name": "syft:package:type",
-          "value": "UnknownPackage"
-        }
-      ]
-    },
     {
       "bom-ref": "pkg:golang/github.com/dustin/go-humanize@v1.0.1?package-id=Package-go-module-github.com-dustin-go-humanize-8432997ae2bcf2c7",
       "type": "library",
@@ -219,7 +206,7 @@
       "bom-ref": "DocumentRoot",
       "type": "library",
       "name": "lake-sqlite",
-      "version": "61745596556c",
+      "version": "f87b0c9c5fb8",
       "licenses": [
         {
           "license": {
@@ -317,7 +304,6 @@
     {
       "ref": "DocumentRoot",
       "dependsOn": [
-        "pkg:docker/gcr.io/distroless/static@sha256%3Ad29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478?package-id=Image-gcr.io-distroless-static-6801982e8cce4463&tag=nonroot",
         "pkg:docker/golang@sha256%3A60deed95d3888cc5e4d9ff8a10c54e5edc008c6ae3fba6187be6fb592e19e8c0?package-id=Image-golang-635af6ed445788c5&tag=1.23"
       ]
     }

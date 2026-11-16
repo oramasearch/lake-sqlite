@@ -2,42 +2,22 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "lake-sqlite-61745596556c",
-  "documentNamespace": "https://github.com/oramasearch/lake-sqlite/sbom/61745596556ca5d6ec4472b6fc8ec6e170de2280",
+  "name": "lake-sqlite-f87b0c9c5fb8",
+  "documentNamespace": "https://github.com/oramasearch/lake-sqlite/sbom/f87b0c9c5fb8ed351007eaedbd867242724e4e16",
   "creationInfo": {
-    "created": "2026-11-16T01:55:26Z",
+    "created": "2026-11-16T03:59:01Z",
     "creators": [
       "Organization: OramaSearch, Inc.",
       "Tool: tools/sbom.py",
       "Tool: syft"
     ],
     "licenseListVersion": "3.29",
-    "comment": "Made from source commit 61745596556ca5d6ec4472b6fc8ec6e170de2280 by tools/sbom.py."
+    "comment": "Made from source commit f87b0c9c5fb8ed351007eaedbd867242724e4e16 by tools/sbom.py."
   },
   "documentDescribes": [
     "SPDXRef-DocumentRoot"
   ],
   "packages": [
-    {
-      "name": "gcr.io/distroless/static",
-      "SPDXID": "SPDXRef-Image-gcr.io-distroless-static-6801982e8cce4463",
-      "versionInfo": "nonroot@sha256:d29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478",
-      "downloadLocation": "NOASSERTION",
-      "filesAnalyzed": false,
-      "supplier": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "primaryPackagePurpose": "CONTAINER",
-      "comment": "Container base image (gcr.io/distroless/static:nonroot@sha256:d29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478), FROM in Dockerfile. Its own packages are in the image SBOM of each release image.",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:docker/gcr.io/distroless/static@sha256%3Ad29e660cc75a5b6b1334e03c5c81ccf9bc0884a002c6000dbf0fb96034814478?tag=nonroot"
-        }
-      ]
-    },
     {
       "name": "github.com/dustin/go-humanize",
       "SPDXID": "SPDXRef-Package-go-module-github.com-dustin-go-humanize-8432997ae2bcf2c7",
@@ -244,7 +224,7 @@
     {
       "name": "lake-sqlite",
       "SPDXID": "SPDXRef-DocumentRoot",
-      "versionInfo": "61745596556c",
+      "versionInfo": "f87b0c9c5fb8",
       "downloadLocation": "git+https://github.com/oramasearch/lake-sqlite.git",
       "homepage": "https://github.com/oramasearch/lake-sqlite",
       "filesAnalyzed": false,
@@ -338,11 +318,6 @@
       "relatedSpdxElement": "SPDXRef-DocumentRoot",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-Image-gcr.io-distroless-static-6801982e8cce4463",
-      "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-DocumentRoot"
     },
     {
       "relatedSpdxElement": "SPDXRef-Image-golang-635af6ed445788c5",

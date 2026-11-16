@@ -30,7 +30,8 @@ docker build -t lake-sqlite:local .
   `docs/control-plane/services.md`; what is built is [`docs/api.md`](docs/api.md). Change both
   together.
 - **Driver:** `modernc.org/sqlite` (pure Go, BSD-3-Clause). Keep CGO off and the runtime
-  distroless/static. Stay on a driver release that supports the Go version in `go.mod`.
+  `scratch` (no distribution packages, so nothing GPL or LGPL in the image). Stay on a driver
+  release that supports the Go version in `go.mod`.
 - **Never log** SQL, parameters, bodies or the token.
 - Images are built for `linux/amd64` and pushed with an immutable `<semver>` tag; the operator's
   default image (`lakeServices.sqliteImage` in its chart) moves to the new tag after the push.

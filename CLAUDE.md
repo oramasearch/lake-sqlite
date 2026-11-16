@@ -5,7 +5,8 @@
   lake's `docs/control-plane/services.md` (the `sqlite` row); what is built is
   [`docs/api.md`](docs/api.md). Change both together.
 - **Driver:** `modernc.org/sqlite` (pure Go, BSD-3-Clause). Keep CGO off and the runtime
-  distroless/static. Stay on a driver release that supports the Go version in `go.mod`.
+  `scratch` (no distribution packages, so nothing GPL or LGPL in the image). Stay on a driver
+  release that supports the Go version in `go.mod`.
 - **Never log** SQL, parameters, bodies or the token.
 - **Build and verify:** `go build ./... && go vet ./... && go test ./...`.
 - **Images** are built for `linux/amd64` natively (not under emulation) and tagged with an

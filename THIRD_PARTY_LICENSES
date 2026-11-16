@@ -22,10 +22,9 @@ Go toolchain and container base image
 
 The binary is compiled with the Go toolchain (golang image, pinned by digest, used only to build);
 the Go standard library linked into it is BSD-3-Clause (https://go.dev/LICENSE). The image runs
-FROM gcr.io/distroless/static:nonroot, pinned by digest (https://github.com/GoogleContainerTools/
-distroless, Apache-2.0), which holds Debian's ca-certificates, tzdata, base-files and
-netbase; their licenses are recorded in the image at /usr/share/doc/*/copyright. The image is not
-part of this repository's source.
+FROM scratch: it holds only the binary, a two-line /etc/passwd and /etc/group written by the
+Dockerfile (MIT, part of this repository) and an empty /tmp. No distribution package, and so no
+GPL, LGPL or AGPL file, is in the image.
 
 ================================================================================
 github.com/dustin/go-humanize v1.0.1 — MIT

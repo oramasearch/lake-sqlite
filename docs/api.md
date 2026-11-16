@@ -11,7 +11,7 @@ and the paragraph after its table; this page is the whole API as built.
 | Source | this repository: [`cmd/lake-sqlite/main.go`](../cmd/lake-sqlite/main.go) and the HTTP API in [`internal/server/`](../internal/server/) |
 | Image | `oramasearch/lake-sqlite:<tag>` (Docker Hub), built from [`Dockerfile`](../Dockerfile) for `linux/amd64` |
 | Driver | [`modernc.org/sqlite`](https://gitlab.com/cznic/sqlite) v1.38.2 — SQLite translated to pure Go, no cgo; **BSD-3-Clause** (SQLite itself is public domain) |
-| Runtime | `gcr.io/distroless/static:nonroot` (no shell, no libc), user `65532:65532`, one static binary |
+| Runtime | `scratch`: one static binary, `/etc/passwd` and `/etc/group` naming user `65532:65532`, an empty `/tmp` (mode `1777`) for SQLite temporary files. No shell, no libc, no CA bundle (no outbound TLS), no distribution packages |
 
 ## Configuration
 
