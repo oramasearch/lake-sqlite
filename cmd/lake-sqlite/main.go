@@ -9,7 +9,7 @@
 //	LAKE_SQLITE_PATH          the database file (default /data/main.db)
 //	LAKE_SQLITE_ADDR          the listen address (default :8080)
 //	LAKE_SQLITE_MEMORY_LIMIT  the container memory limit in bytes (optional); the Go heap is held
-//	                          to 3/4 of it and SQLite's page cache to 1/4
+//	                          to 3/4 of it, leaving the rest to SQLite
 package main
 
 import (
@@ -79,12 +79,11 @@ func run(log *slog.Logger) error {
 		}
 	}()
 	if memoryLimit > 0 {
-		// Right-size both halves: the Go runtime's heap and SQLite's own allocator, which is not
-		// Go heap, share the container limit.
+		// The Go heap gets three quarters of the container limit. The rest is left to SQLite's own
+		// allocator, which is not Go heap; it is bounded by the page cache and by the guard's
+		// length limit and response budget, not by a heap-limit pragma (this build of SQLite keeps
+		// no memory statistics, so those pragmas are not enforced).
 		debug.SetMemoryLimit(memoryLimit / 4 * 3)
-		if _, err := srv.DB().ExecContext(ctx, fmt.Sprintf("PRAGMA soft_heap_limit=%d", memoryLimit/4)); err != nil {
-			return fmt.Errorf("set the SQLite soft heap limit: %w", err)
-		}
 	}
 
 	httpServer := &http.Server{

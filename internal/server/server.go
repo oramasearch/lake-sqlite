@@ -33,10 +33,16 @@ const (
 	DefaultMaxBodyBytes = 16 << 20
 	// DefaultRequestTimeout bounds every request, the SQL included.
 	DefaultRequestTimeout = 30 * time.Second
+	// DefaultMaxResponseBytes caps the values one response carries, a whole batch together: 32 MiB.
+	DefaultMaxResponseBytes = 32 << 20
+	// MaxBatchStatements caps the statements in one batch.
+	MaxBatchStatements = 1000
 	// BusyTimeoutMillis is how long a statement waits for SQLite's write lock.
 	BusyTimeoutMillis = 5000
 
 	healthTimeout = 2 * time.Second
+	// rollbackTimeout bounds the rollback of a transaction a request left open.
+	rollbackTimeout = 5 * time.Second
 	// maxOpenConns: WAL lets readers run beside the one writer; writers queue on busy_timeout.
 	maxOpenConns = 4
 )
@@ -47,10 +53,12 @@ type Config struct {
 	Path string
 	// Token is the bearer token every route but /healthz requires.
 	Token string
-	// MaxRows, MaxBodyBytes and RequestTimeout default to the constants above when zero.
-	MaxRows        int
-	MaxBodyBytes   int64
-	RequestTimeout time.Duration
+	// MaxRows, MaxBodyBytes, MaxResponseBytes and RequestTimeout default to the constants above
+	// when zero.
+	MaxRows          int
+	MaxBodyBytes     int64
+	MaxResponseBytes int64
+	RequestTimeout   time.Duration
 	// Logger receives one line per request; nil discards them.
 	Logger *slog.Logger
 }
@@ -61,19 +69,18 @@ type Server struct {
 	tokenHash [sha256.Size]byte
 	maxRows   int
 	maxBody   int64
+	maxResp   int64
 	timeout   time.Duration
 	log       *slog.Logger
 }
 
-// DSN is the driver connection string for path: WAL, a 5 s busy timeout, foreign keys on, and
-// transactions that take the write lock when they begin, so two batches never deadlock upgrading a
-// read lock.
+// DSN is the driver connection string for path: WAL, a 5 s busy timeout and foreign keys on.
+// Batches begin IMMEDIATE (handleBatch), so two never deadlock upgrading a read lock.
 func DSN(path string) string {
 	query := url.Values{}
 	query.Add("_pragma", fmt.Sprintf("busy_timeout(%d)", BusyTimeoutMillis))
 	query.Add("_pragma", "journal_mode(WAL)")
 	query.Add("_pragma", "foreign_keys(1)")
-	query.Set("_txlock", "immediate")
 	return "file:" + path + "?" + query.Encode()
 }
 
@@ -85,7 +92,7 @@ func Open(ctx context.Context, cfg Config) (*Server, error) {
 	if cfg.Token == "" {
 		return nil, errors.New("token is empty")
 	}
-	db, err := sql.Open("sqlite", DSN(cfg.Path))
+	db, err := sql.Open(driverName, DSN(cfg.Path))
 	if err != nil {
 		return nil, err
 	}
@@ -96,6 +103,7 @@ func Open(ctx context.Context, cfg Config) (*Server, error) {
 		tokenHash: sha256.Sum256([]byte(cfg.Token)),
 		maxRows:   cfg.MaxRows,
 		maxBody:   cfg.MaxBodyBytes,
+		maxResp:   cfg.MaxResponseBytes,
 		timeout:   cfg.RequestTimeout,
 		log:       cfg.Logger,
 	}
@@ -104,6 +112,9 @@ func Open(ctx context.Context, cfg Config) (*Server, error) {
 	}
 	if s.maxBody <= 0 {
 		s.maxBody = DefaultMaxBodyBytes
+	}
+	if s.maxResp <= 0 {
+		s.maxResp = DefaultMaxResponseBytes
 	}
 	if s.timeout <= 0 {
 		s.timeout = DefaultRequestTimeout
@@ -118,8 +129,14 @@ func Open(ctx context.Context, cfg Config) (*Server, error) {
 	return s, nil
 }
 
-// DB is the underlying pool, for settings the caller applies once (the soft heap limit).
-func (s *Server) DB() *sql.DB { return s.db }
+// conn takes a connection from the pool for one request; release gives it back.
+func (s *Server) conn(ctx context.Context) (*sql.Conn, *apiError) {
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return nil, sqlError(ctx, err)
+	}
+	return conn, nil
+}
 
 // Close closes the database; the last connection to close checkpoints the WAL.
 func (s *Server) Close() error { return s.db.Close() }
@@ -299,15 +316,17 @@ func (s *Server) handleQuery(ctx context.Context, body []byte) (interface{}, *ap
 	if apiErr != nil {
 		return nil, apiErr
 	}
-	rows, err := s.db.QueryContext(ctx, st.SQL, args...)
+	conn, apiErr := s.conn(ctx)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	defer release(conn)
+	rows, err := conn.QueryContext(ctx, st.SQL, args...)
 	if err != nil {
 		return nil, sqlError(ctx, err)
 	}
-	result, err := s.readRows(rows)
-	if err != nil {
-		return nil, sqlError(ctx, err)
-	}
-	return result, nil
+	budget := s.maxResp
+	return s.readRows(ctx, rows, &budget)
 }
 
 func (s *Server) handleExec(ctx context.Context, body []byte) (interface{}, *apiError) {
@@ -319,7 +338,12 @@ func (s *Server) handleExec(ctx context.Context, body []byte) (interface{}, *api
 	if apiErr != nil {
 		return nil, apiErr
 	}
-	res, err := s.db.ExecContext(ctx, st.SQL, args...)
+	conn, apiErr := s.conn(ctx)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	defer release(conn)
+	res, err := conn.ExecContext(ctx, st.SQL, args...)
 	if err != nil {
 		return nil, sqlError(ctx, err)
 	}
@@ -339,7 +363,9 @@ func execResultOf(res sql.Result) (execResult, *apiError) {
 }
 
 // handleBatch runs every statement in one transaction, in order. A statement that returns columns
-// answers like /v1/query, any other like /v1/exec. The first error rolls the whole batch back.
+// answers like /v1/query, any other like /v1/exec. The first error rolls the whole batch back. The
+// transaction is the server's own BEGIN IMMEDIATE on one connection; the guard refuses transaction
+// control from the statements, so none can commit part of the batch.
 func (s *Server) handleBatch(ctx context.Context, body []byte) (interface{}, *apiError) {
 	var req batchRequest
 	if err := decode(body, &req); err != nil {
@@ -347,6 +373,9 @@ func (s *Server) handleBatch(ctx context.Context, body []byte) (interface{}, *ap
 	}
 	if len(req.Statements) == 0 {
 		return nil, &apiError{http.StatusBadRequest, "invalid_request", "statements is empty"}
+	}
+	if len(req.Statements) > MaxBatchStatements {
+		return nil, &apiError{http.StatusBadRequest, "invalid_request", fmt.Sprintf("statements holds more than %d statements", MaxBatchStatements)}
 	}
 	args := make([][]interface{}, len(req.Statements))
 	for i, st := range req.Statements {
@@ -358,59 +387,71 @@ func (s *Server) handleBatch(ctx context.Context, body []byte) (interface{}, *ap
 		args[i] = a
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
+	conn, apiErr := s.conn(ctx)
+	if apiErr != nil {
+		return nil, apiErr
+	}
+	// release rolls back whatever this function did not commit.
+	defer release(conn)
+	if err := control(ctx, conn, "BEGIN IMMEDIATE"); err != nil {
 		return nil, sqlError(ctx, err)
 	}
-	committed := false
-	defer func() {
-		if !committed {
-			_ = tx.Rollback()
-		}
-	}()
+	budget := s.maxResp
 	results := make([]interface{}, 0, len(req.Statements))
 	for i, st := range req.Statements {
-		result, apiErr := s.runInTx(ctx, tx, st.SQL, args[i])
+		result, apiErr := s.runInTx(ctx, conn, st.SQL, args[i], &budget)
 		if apiErr != nil {
 			apiErr.message = fmt.Sprintf("statements[%d]: %s", i, apiErr.message)
 			return nil, apiErr
 		}
 		results = append(results, result)
 	}
-	if err := tx.Commit(); err != nil {
+	if err := control(ctx, conn, "COMMIT"); err != nil {
 		return nil, sqlError(ctx, err)
 	}
-	committed = true
 	return struct {
 		Results []interface{} `json:"results"`
 	}{results}, nil
 }
 
-// runInTx runs one batch statement. Every statement of a transaction runs on the same connection,
-// so changes() and last_insert_rowid() read right after it are its own, exactly as the driver's
-// Exec reads them.
-func (s *Server) runInTx(ctx context.Context, tx *sql.Tx, query string, args []interface{}) (interface{}, *apiError) {
-	rows, err := tx.QueryContext(ctx, query, args...)
+// runInTx runs one batch statement. Every statement of the batch runs on the same connection, so
+// changes() and last_insert_rowid() read right after it are its own, exactly as the driver's Exec
+// reads them.
+func (s *Server) runInTx(ctx context.Context, conn *sql.Conn, query string, args []interface{}, budget *int64) (interface{}, *apiError) {
+	rows, err := conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, sqlError(ctx, err)
 	}
-	result, err := s.readRows(rows)
-	if err != nil {
-		return nil, sqlError(ctx, err)
+	result, apiErr := s.readRows(ctx, rows, budget)
+	if apiErr != nil {
+		return nil, apiErr
 	}
 	if len(result.Columns) > 0 {
 		return result, nil
 	}
 	var exec execResult
-	if err := tx.QueryRowContext(ctx, "SELECT changes(), last_insert_rowid()").Scan(&exec.RowsAffected, &exec.LastInsertID); err != nil {
+	if err := conn.QueryRowContext(ctx, "SELECT changes(), last_insert_rowid()").Scan(&exec.RowsAffected, &exec.LastInsertID); err != nil {
 		return nil, sqlError(ctx, err)
 	}
 	return exec, nil
 }
 
-// readRows reads up to maxRows rows and closes rows. When there are more, it stops and marks the
-// result truncated.
-func (s *Server) readRows(rows *sql.Rows) (queryResult, error) {
+// readRows reads up to maxRows rows, and no more than budget bytes of values, and closes rows. When
+// there are more, it stops and marks the result truncated. A first row bigger than the whole budget
+// is refused.
+func (s *Server) readRows(ctx context.Context, rows *sql.Rows, budget *int64) (queryResult, *apiError) {
+	result, err := s.scanRows(rows, budget)
+	if err != nil {
+		var apiErr *apiError
+		if errors.As(err, &apiErr) {
+			return queryResult{}, apiErr
+		}
+		return queryResult{}, sqlError(ctx, err)
+	}
+	return result, nil
+}
+
+func (s *Server) scanRows(rows *sql.Rows, budget *int64) (queryResult, error) {
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
@@ -433,6 +474,16 @@ func (s *Server) readRows(rows *sql.Rows) (queryResult, error) {
 		if err := rows.Scan(pointers...); err != nil {
 			return queryResult{}, err
 		}
+		size := rowSize(values)
+		if size > *budget {
+			if len(result.Rows) == 0 {
+				return queryResult{}, &apiError{http.StatusRequestEntityTooLarge, "response_too_large",
+					fmt.Sprintf("a row is over the %d bytes left for this response", *budget)}
+			}
+			result.Truncated = true
+			break
+		}
+		*budget -= size
 		row := make([]interface{}, len(columns))
 		for i, value := range values {
 			row[i] = encodeValue(value)
@@ -461,6 +512,8 @@ func sqlError(ctx context.Context, err error) *apiError {
 			return &apiError{http.StatusServiceUnavailable, "busy", sqliteErr.Error()}
 		case sqlite3.SQLITE_FULL:
 			return &apiError{http.StatusInsufficientStorage, "disk_full", sqliteErr.Error()}
+		case sqlite3.SQLITE_AUTH:
+			return &apiError{http.StatusForbidden, "not_allowed", "the statement is not allowed: ATTACH, DETACH, VACUUM, transaction control and pragmas that change the connection are refused (docs/api.md)"}
 		case sqlite3.SQLITE_INTERRUPT:
 			return &apiError{http.StatusGatewayTimeout, "timeout", "the request ran past its time limit"}
 		}

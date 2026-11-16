@@ -149,3 +149,20 @@ func formatTime(t time.Time) string {
 	}
 	return t.Format(layout)
 }
+
+// rowSize estimates the bytes a row's values take in a response: a blob's base64 length, a text's
+// length, and a fixed amount for any other value. It is what the response budget counts.
+func rowSize(values []interface{}) int64 {
+	var size int64
+	for _, value := range values {
+		switch v := value.(type) {
+		case []byte:
+			size += int64(base64.StdEncoding.EncodedLen(len(v)))
+		case string:
+			size += int64(len(v))
+		default:
+			size += 24
+		}
+	}
+	return size
+}
