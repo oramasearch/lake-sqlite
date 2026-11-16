@@ -3,7 +3,7 @@
 The web service behind lake's **SQLite service kind**: one SQLite database behind a small HTTP API
 with a bearer token. A customer creates a SQLite service on lake's Services page; the Orama operator
 runs one `lake-sqlite` pod per service with its own volume, and lake hands the customer its address
-and token (liquid-bridge decision 47, amended).
+and token.
 
 ```sh
 make test            # go test ./...
@@ -20,7 +20,6 @@ curl -s -H 'Authorization: Bearer local-dev-token' -d '{"sql":"SELECT 1 AS one"}
 
 The whole API, configuration, limits and errors: [`docs/api.md`](docs/api.md).
 
-**Private.** This repository and the `oramasearch/lake-sqlite` Docker Hub repository are private,
-like every Orama service (the umbrella `CLAUDE.md` rule). Pin: liquid-bridge `modules/lake-sqlite`.
+The image is `oramasearch/lake-sqlite` on Docker Hub.
 The operator side (StatefulSet, Service, credential) is orama-operator
 `internal/controller/lake_service_sqlite.go`.
