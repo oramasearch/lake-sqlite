@@ -44,6 +44,13 @@ curl -s -H 'Authorization: Bearer local-dev-token' -d '{"sql":"SELECT 1 AS one"}
 
 You should see `{"columns":["one"],"rows":[[1]]}`.
 
+Or run the published image:
+
+```sh
+docker run --rm -p 8080:8080 -e LAKE_SQLITE_TOKEN=local-dev-token -e LAKE_SQLITE_PATH=/tmp/main.db \
+  oramasearch/lake-sqlite:0.2.0
+```
+
 ### Build from source
 
 ```sh
