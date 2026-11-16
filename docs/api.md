@@ -127,7 +127,7 @@ Every error is `{"error": {"code": "...", "message": "..."}}`:
 
 ## Build
 
-The image is built from the repository root, for `linux/amd64` (the cluster's architecture):
+The image is built from the repository root, for `linux/amd64`:
 
 ```sh
 docker buildx build --platform linux/amd64 \

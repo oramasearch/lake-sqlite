@@ -61,7 +61,7 @@ OUTPUTS = ("sbom.spdx.json", "sbom.cdx.json")
 SELF = "tools/sbom.py"
 ALWAYS_EXCLUDED = ["**/.github/workflows/"]
 # Repositories whose public home is not github.com/oramasearch/<name>.
-PUBLIC_HOME = {"oramasearch/automerge-cpp": "homer6/automerge-cpp"}
+PUBLIC_HOME: dict[str, str] = {}
 # Lets syft read only what is in the tree: no network, no local caches.
 SYFT_ENV = {
     "SYFT_CHECK_FOR_APP_UPDATE": "false",
