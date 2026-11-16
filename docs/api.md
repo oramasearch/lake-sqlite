@@ -2,16 +2,15 @@
 
 `lake-sqlite` is the small web service behind lake's **`sqlite` service kind**: one SQLite database
 behind an HTTP API with a bearer token. SQLite has no upstream Kubernetes operator, so the Orama
-operator runs it itself, one StatefulSet per service (orama-operator [`docs/lake/services.md`](https://github.com/oramasearch/orama-operator/blob/main/docs/lake/services.md);
-liquid-bridge decision 47, amended). The contract is the `sqlite` row of lake's
+operator runs it itself, one StatefulSet per service (orama-operator [`docs/lake/services.md`](https://github.com/oramasearch/orama-operator/blob/main/docs/lake/services.md)). The contract is the `sqlite` row of lake's
 [`docs/control-plane/services.md`](https://github.com/oramasearch/lake/blob/17b4ad57f2571c30516f7ecb85c03a4165e32e59/docs/control-plane/services.md)
 and the paragraph after its table; this page is the whole API as built.
 
 | | |
 |---|---|
 | Source | this repository: [`cmd/lake-sqlite/main.go`](../cmd/lake-sqlite/main.go) and the HTTP API in [`internal/server/`](../internal/server/) |
-| Image | `oramasearch/lake-sqlite:<tag>` (a **private** Docker Hub repository), built from [`Dockerfile`](../Dockerfile) for `linux/amd64` |
-| Driver | [`modernc.org/sqlite`](https://gitlab.com/cznic/sqlite) v1.38.2 — SQLite translated to pure Go, no cgo; **BSD-3-Clause** (SQLite itself is public domain). Chosen at Steve's direction that SQLite be offered |
+| Image | `oramasearch/lake-sqlite:<tag>` (Docker Hub), built from [`Dockerfile`](../Dockerfile) for `linux/amd64` |
+| Driver | [`modernc.org/sqlite`](https://gitlab.com/cznic/sqlite) v1.38.2 — SQLite translated to pure Go, no cgo; **BSD-3-Clause** (SQLite itself is public domain) |
 | Runtime | `gcr.io/distroless/static:nonroot` (no shell, no libc), user `65532:65532`, one static binary |
 
 ## Configuration
@@ -138,8 +137,7 @@ docker buildx build --platform linux/amd64 \
 
 The builder is the same digest-pinned `golang:1.23` as the operator's own image; the build runs
 with `CGO_ENABLED=0`, `-trimpath` and a stripped binary. The chart's default is
-`lakeServices.sqliteImage: oramasearch/lake-sqlite:0.1.0`, so that tag must be published (private
-Docker Hub, like the operator) before a SQLite service can start; a Lake overrides it with
+`lakeServices.sqliteImage: oramasearch/lake-sqlite:0.1.0`, so that tag must be published before a SQLite service can start; a Lake overrides it with
 `spec.services.sqliteImage`. Changing the image rolls every SQLite service's pod once.
 
 ## Run locally

@@ -11,7 +11,7 @@ test: ## Unit and HTTP tests (no network, temp directories only).
 vet:
 	go vet ./...
 
-docker-build: ## linux/amd64 image. Never push a new name before it exists as a private repo (README).
+docker-build: ## linux/amd64 image.
 	docker buildx build --platform linux/amd64 -t $(IMG) .
 
 run: build ## Serve ./local.db on :8080 with a throwaway token.
