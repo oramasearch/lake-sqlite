@@ -1,10 +1,9 @@
-/*
-Copyright 2026 OramaSearch.
-Licensed under the Apache License, Version 2.0.
-*/
+// SPDX-License-Identifier: MIT
 
 // lake-sqlite serves one SQLite database over HTTP for lake's sqlite service kind. The Orama
 // operator runs it as a one-pod StatefulSet per service (docs/lake/lake-sqlite.md).
+//
+// `lake-sqlite --version` prints the version and exits.
 //
 // Environment:
 //
@@ -12,7 +11,7 @@ Licensed under the Apache License, Version 2.0.
 //	LAKE_SQLITE_PATH          the database file (default /data/main.db)
 //	LAKE_SQLITE_ADDR          the listen address (default :8080)
 //	LAKE_SQLITE_MEMORY_LIMIT  the container memory limit in bytes (optional); the Go heap is held
-//	                          to 3/4 of it and SQLite's page cache to 1/4
+//	                          to 3/4 of it, leaving the rest to SQLite
 package main
 
 import (
@@ -29,6 +28,7 @@ import (
 	"time"
 
 	"github.com/oramasearch/lake-sqlite/internal/server"
+	"github.com/oramasearch/lake-sqlite/internal/version"
 )
 
 const (
@@ -41,6 +41,10 @@ const (
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
+		fmt.Println("lake-sqlite", version.Version)
+		return
+	}
 	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	if err := run(log); err != nil {
 		log.Error("lake-sqlite stopped", "err", err.Error())
@@ -82,12 +86,11 @@ func run(log *slog.Logger) error {
 		}
 	}()
 	if memoryLimit > 0 {
-		// Right-size both halves: the Go runtime's heap and SQLite's own allocator, which is not
-		// Go heap, share the container limit.
+		// The Go heap gets three quarters of the container limit. The rest is left to SQLite's own
+		// allocator, which is not Go heap; it is bounded by the page cache and by the guard's
+		// length limit and response budget, not by a heap-limit pragma (this build of SQLite keeps
+		// no memory statistics, so those pragmas are not enforced).
 		debug.SetMemoryLimit(memoryLimit / 4 * 3)
-		if _, err := srv.DB().ExecContext(ctx, fmt.Sprintf("PRAGMA soft_heap_limit=%d", memoryLimit/4)); err != nil {
-			return fmt.Errorf("set the SQLite soft heap limit: %w", err)
-		}
 	}
 
 	httpServer := &http.Server{
@@ -102,7 +105,7 @@ func run(log *slog.Logger) error {
 	}
 	errs := make(chan error, 1)
 	go func() {
-		log.Info("lake-sqlite listening", "addr", addr, "path", path)
+		log.Info("lake-sqlite listening", "version", version.Version, "addr", addr, "path", path)
 		errs <- httpServer.ListenAndServe()
 	}()
 
